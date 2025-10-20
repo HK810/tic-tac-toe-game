@@ -6,7 +6,7 @@ function TicTacToe() {
   const [scores, setScores] = useState({ x: 0, o: 0, draw: 0 });
   const [gameHistory, setGameHistory] = useState([]);
 
-  // Check for winner
+  // Check for winner (returns {player, line} or null)
   const calculateWinner = (squares) => {
     const lines = [
       [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
@@ -17,7 +17,7 @@ function TicTacToe() {
     for (let i = 0; i < lines.length; i++) {
       const [a, b, c] = lines[i];
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-        return squares[a];
+        return { player: squares[a], line: [a, b, c] };
       }
     }
     return null;
@@ -54,9 +54,9 @@ function TicTacToe() {
 
   // Get game status
   const getGameStatus = () => {
-    const winner = calculateWinner(squares);
-    if (winner) {
-      return { type: 'winner', message: `🎉 Player ${winner} wins!` };
+    const result = calculateWinner(squares);
+    if (result) {
+      return { type: 'winner', message: `🎉 Player ${result.player} wins!`, line: result.line };
     } else if (isBoardFull(squares)) {
       return { type: 'draw', message: "🤝 It's a draw!" };
     } else {
@@ -66,13 +66,13 @@ function TicTacToe() {
 
   // Update scores when game ends
   useEffect(() => {
-    const winner = calculateWinner(squares);
-    const isDraw = isBoardFull(squares) && !winner;
+    const result = calculateWinner(squares);
+    const isDraw = isBoardFull(squares) && !result;
     
-    if (winner || isDraw) {
+    if (result || isDraw) {
       const newScores = { ...scores };
-      if (winner) {
-        newScores[winner.toLowerCase()]++;
+      if (result) {
+        newScores[result.player.toLowerCase()]++;
       } else if (isDraw) {
         newScores.draw++;
       }
@@ -80,7 +80,7 @@ function TicTacToe() {
       
       // Add to game history
       setGameHistory(prev => [...prev, {
-        winner: winner || 'draw',
+        winner: result ? result.player : 'draw',
         timestamp: new Date().toLocaleTimeString(),
         moves: squares.filter(sq => sq !== null).length
       }]);
@@ -89,9 +89,11 @@ function TicTacToe() {
 
   // Render square
   const renderSquare = (i) => {
+    const result = gameStatus.type === 'winner' ? gameStatus : null;
+    const isWinning = result && result.line.includes(i);
     return (
       <button
-        className={`square ${squares[i] ? squares[i].toLowerCase() : ''}`}
+        className={`square ${squares[i] ? squares[i].toLowerCase() : ''} ${isWinning ? 'win' : ''}`}
         onClick={() => handleClick(i)}
         disabled={squares[i] || calculateWinner(squares)}
       >
